@@ -16,6 +16,8 @@ classdef waveform_dis_exported < matlab.apps.AppBase
         WaveFormDropDown         matlab.ui.control.DropDown
         WaveFormDropDownLabel    matlab.ui.control.Label
         RightPanel               matlab.ui.container.Panel
+        offsetEditField          matlab.ui.control.NumericEditField
+        offsetEditFieldLabel     matlab.ui.control.Label
         PlotButton               matlab.ui.control.Button
         UIAxes                   matlab.ui.control.UIAxes
     end
@@ -30,27 +32,29 @@ classdef waveform_dis_exported < matlab.apps.AppBase
 
         % Button pushed function: PlotButton
         function PlotButtonPushed(app, event)
-           fs = 512;
-           dt = 1/fs;
-           StopTime = 0.25;
-           t = (0:dt:StopTime-dt)';
+           StopTime = 1;
 
            A = app.AmplitudeEditField.Value;
            F = app.FrequencyEditField.Value;
+           offset = app.offsetEditField.Value;
 
+           t = -1*StopTime:1/(100*F):StopTime;
+           period = 1/F
+           omega = 2*pi/period;
+        
            switch app.WaveFormDropDown.Value
                 case 'Sine Wave'
-                    data = A*sin(2*pi*F*t);
-                    plot(app.UIAxes,data)
+                    data = A*sin(omega*t);
+                    plot(app.UIAxes,data+offset,'LineWidth',2.0)
                 case 'Square Wave'
-                    data = A*square(2*pi*F*t);
-                    plot(app.UIAxes,data)
+                    data = A*square(omega*t);
+                    plot(app.UIAxes,data+offset,'LineWidth',2.0)
                 case 'Triangle Wave'
-                    data = A*sawtooth(2*pi*F*t,1/2);
-                    plot(app.UIAxes,data)
+                    data = A*sawtooth(omega*t,1/2);
+                    plot(app.UIAxes,data+offset,'LineWidth',2.0)
                 case 'Sawtooth Wave'
-                    data = A*sawtooth(2*pi*F*t);
-                    plot(app.UIAxes,data)
+                    data = A*sawtooth(omega*t);
+                    plot(app.UIAxes,data+offset,'LineWidth',2.0)
             end
         end
 
@@ -61,8 +65,7 @@ classdef waveform_dis_exported < matlab.apps.AppBase
 
         % Value changed function: FrequencyEditField
         function FrequencyEditFieldValueChanged(app, event)
-            value = app.FrequencyEditField.Value;
-            
+            value = app.FrequencyEditField.Value;            
         end
 
         % Value changed function: AmplitudeEditField
@@ -90,6 +93,11 @@ classdef waveform_dis_exported < matlab.apps.AppBase
         % Value changed function: AmplitudeKnob
         function AmplitudeKnobValueChanged(app, event)
             value = app.AmplitudeKnob.Value;
+        end
+
+        % Value changed function: offsetEditField
+        function offsetEditFieldValueChanged(app, event)
+            value = app.offsetEditField.Value;
         end
 
         % Changes arrangement of the app based on UIFigure width
@@ -173,11 +181,13 @@ classdef waveform_dis_exported < matlab.apps.AppBase
 
             % Create AmplitudeKnob
             app.AmplitudeKnob = uiknob(app.LeftPanel, 'continuous');
-            app.AmplitudeKnob.Limits = [0 1000];
-            app.AmplitudeKnob.MajorTicks = [0 100 200 300 400 500 600 700 800 900 1000];
+            app.AmplitudeKnob.Limits = [1 10];
+            app.AmplitudeKnob.MajorTicks = [1 2 3 4 5 6 7 8 9 10];
+            app.AmplitudeKnob.MajorTickLabels = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '10'};
             app.AmplitudeKnob.ValueChangedFcn = createCallbackFcn(app, @AmplitudeKnobValueChanged, true);
             app.AmplitudeKnob.ValueChangingFcn = createCallbackFcn(app, @AmplitudeKnobValueChanging, true);
             app.AmplitudeKnob.Position = [80 109 60 60];
+            app.AmplitudeKnob.Value = 1;
 
             % Create FrequencyEditFieldLabel
             app.FrequencyEditFieldLabel = uilabel(app.LeftPanel);
@@ -219,6 +229,17 @@ classdef waveform_dis_exported < matlab.apps.AppBase
             app.PlotButton.FontSize = 18;
             app.PlotButton.Position = [312 43 130 42];
             app.PlotButton.Text = 'Plot';
+
+            % Create offsetEditFieldLabel
+            app.offsetEditFieldLabel = uilabel(app.RightPanel);
+            app.offsetEditFieldLabel.HorizontalAlignment = 'right';
+            app.offsetEditFieldLabel.Position = [41 19 34 22];
+            app.offsetEditFieldLabel.Text = 'offset';
+
+            % Create offsetEditField
+            app.offsetEditField = uieditfield(app.RightPanel, 'numeric');
+            app.offsetEditField.ValueChangedFcn = createCallbackFcn(app, @offsetEditFieldValueChanged, true);
+            app.offsetEditField.Position = [90 19 100 22];
 
             % Show the figure after all components are created
             app.UIFigure.Visible = 'on';
